@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☕ Espresso Empire: Corporate & Crafting ☕</title>
+    
+    <!-- Include Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0704;
+            --panel-color: #160f0a;
+            --border-color: #362316;
+            --text-main: #f2e6da;
+            --accent-gold: #e6ccb2;
+            --neon-green: #06d6a0;
+            --neon-red: #ef476f;
+            --neon-blue: #118ab2;
+            --neon-orange: #ffd166;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 15px;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h1 { color: var(--accent-gold); text-align: center; font-size: 2.2em; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 2px;}
+        h2 { text-align: center; color: #b08968; font-size: 1em; margin-top: 0; margin-bottom: 15px;}
+
+        /* AUTH CONTAINER PANEL */
+        .auth-panel {
+            background-color: var(--panel-color);
+            border: 2px dashed var(--accent-gold);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .auth-input {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0;
+            box-sizing: border-box;
+            background: #f5ebe0;
+            border: 1px solid #7f5539;
+            font-weight: bold;
+            color: #2c1d11;
+        }
+
+        /* TAB NAVIGATION SYSTEM */
+        .tab-navigation { display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;}
+        .tab-btn { background: #261910; color: #b08968; border: 1px solid var(--border-color); padding: 10px 15px; font-weight: bold; cursor: pointer; border-radius: 4px; width: auto;}
+        .tab-btn.active { background: var(--accent-gold); color: #160f0a; border-color: #fff; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media(max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+        .box {
+            background-color: var(--panel-color);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .full-width { grid-column: span 2; }
+        @media(max-width: 768px) { .full-width { grid-column: span 1; } }
+
+        h3 { border-bottom: 1px dashed var(--border-color); padding-bottom: 6px; margin-top: 0; color: var(--accent-gold); font-size: 1.1em;}
+
+        button {
+            background: linear-gradient(135deg, #7f5539, #5c3d24);
+            color: #fff;
+            border: 1px solid #7f5539;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 4px 0;
+            width: 100%;
+            border-radius: 4px;
+        }
+        button:hover:not(:disabled) { background: linear-gradient(135deg, #a67c52, #7f5539); }
+        button:disabled { background: #21150c; color: #4a3423; border-color: #1c1109; cursor: not-allowed;}
+
+        .flex { display: flex; justify-content: space-between; align-items: center; margin: 6px 0; }
+        input[type="number"] { width: 75px; background: #f5ebe0; border: 2px solid #7f5539; padding: 4px; text-align: center; font-weight: bold; border-radius: 4px; color: #2c1d11;}
+        
+        .progress-container { width: 90px; background-color: #21150c; border-radius: 4px; height: 10px; overflow: hidden; display: inline-block;}
+        .progress-bar { height: 100%; width: 100%; background-color: var(--neon-green); }
+
+        .badge { font-weight: bold; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; }
+        .sunny { background-color: #ffb703; color: #023047; }
+        .rainy { background-color: #219ebc; color: white; }
+        .heatwave { background-color: #fb8500; color: white; }
+
+        .ticker { background-color: #1a120b; padding: 8px; border-radius: 4px; font-size: 0.85em; color: var(--neon-orange); margin-bottom: 15px; border-left: 4px solid var(--neon-orange); text-align: center;}
+        .ledger-row { border-bottom: 1px solid #21150c; padding: 5px 0; font-size: 0.9em;}
+
+        /* INTERACTIVE BARISTA WORKBENCH STYLE */
+        #barista-shift-container {
+            background-color: #1e140f;
+            border: 3px double var(--accent-gold);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .crafting-btn {
+            background: #4e3524;
+            border: 2px solid #7f5539;
+            color: #fff;
+            width: auto;
+            display: inline-block;
+            padding: 8px 14px;
+            margin: 4px;
+            font-size: 0.95em;
+        }
+        .crafting-btn:active { background-color: var(--accent-gold); color: #000; }
+        .ticket-view {
+            background-color: #f5ebe0;
+            color: #2c1d11;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            max-width: 350px;
+            margin: 10px auto;
+            border-left: 8px solid var(--neon-blue);
+            text-align: left;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .cup-builder {
+            border: 3px dashed var(--border-color);
+            background-color: #110905;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px auto;
+            max-width: 400px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-section" class="auth-panel">
+        <h3 style="text-align: center;">🔐 Enterprise Security Firewall</h3>
+        <p style="font-size: 0.8em; color: var(--accent-gold); text-align: center;">Sign in via email profile to sync state parameters.</p>
+        <input type="email" id="auth-email" class="auth-input" placeholder="Corporate Email Address">
+        <input type="password" id="auth-password" class="auth-input" placeholder="Account Security Key">
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button onclick="handleEmailSignUp()" style="background: #4e3524;">Register Profile</button>
+            <button onclick="handleEmailLogin()" style="background: var(--neon-blue);">Sign In</button>
+        </div>
+        <div id="auth-status" style="font-size:0.8em; text-align:center; margin-top:8px; color:var(--neon-orange);">Playing in local offline profile state.</div>
+    </div>
+
+    <div id="active-game">
+        <h1>☕ ESPRESSO EMPIRE 8.0 ☕</h1>
+        <h2>📅 Day <span id="day-counter">1</span> | Forecast: <span id="weather-display" class="badge sunny">☀️ Sunny</span></h2>
+
+        <div class="box full-width" style="margin-bottom: 15px; border-color: var(--neon-blue);">
+            <h3>💾 Cloud Backup Hub <span id="active-user-badge" style="float: right; font-size: 0.75em; color: var(--neon-green);">Guest Account</span></h3>
+            <div class="flex" style="gap: 10px;">
+                <button onclick="saveGameToCloud()" style="background: linear-gradient(135deg, #118ab2, #0d6e8f); border-color: #118ab2;">Manual Cloud Save</button>
+                <button onclick="loadGameFromCloud()" style="background: linear-gradient(135deg, #ffd166, #e2ba53); border-color: #ffd166; color: #000;">Sync Cloud Data</button>
+            </div>
+            <div id="save-status" style="font-size: 0.85em; text-align: center; margin-top: 5px; color: var(--accent-gold);">Status: Local Backup Profile Connected</div>
+        </div>
+
+        <div id="data-ticker" class="ticker">📊 MARKET NOTICE: Set parameters across tabs before opening up shop.</div>
+
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('treasury')">💰 Treasury & Sourcing</button>
+            <button class="tab-btn" onclick="switchTab('operations')">⚙️ Operations & HR</button>
+            <button class="tab-btn" onclick="switchTab('pricing')">📋 Menu Strategy</button>
+        </div>
+
+        <div id="tab-treasury" class="tab-content active">
+            <div class="grid">
+                <div class="box">
+                    <h3>📊 Corporate Liquidity <span id="tax-countdown" style="font-size:0.75em; color:var(--neon-orange); float:right;">TAX IN: 4 DAYS</span></h3>
+                    <div class="flex"><p>Liquid Cash:</p><p><strong id="cash" style="color:var(--neon-green)">$100.00</strong></p></div>
+                    <div class="flex"><p>Outstanding Bank Debt:</p><p style="color:var(--neon-red); font-weight:bold;" id="loan-display">$0.00</p></div>
+                    <div class="flex"><p>Credit Limit Available:</p><p>$<span id="credit-limit">200.00</span></p></div>
+                    <div class="flex"><p>Brand Equity Share:</p>
+                        <div>
+                            <span id="loyalty-val" style="font-weight:bold; margin-right:5px;">50%</span>
+                            <div class="progress-container"><div id="loyalty-bar" class="progress-bar"></div></div>
+                        </div>
+                    </div>
+                    <button id="btn-pay-loan" onclick="payDownLoan()" disabled>🏦 Liquidate Bank Debt Block (-$25.00)</button>
+                </div>
+
+                <div class="box">
+                    <h3>📦 Material Supply Chain</h3>
+                    <div class="flex"><p>Stockpile Level:</p><p><strong id="beans-display">50</strong> / 120 units</p></div>
+                    <div class="flex"><p>Freshness Lifespan:</p><p id="stale-profile" style="font-weight:bold;">Optimal Quality</p></div>
+                    <div class="flex"><p>Contamination Risk:</p><p id="contamination-display" style="color:var(--neon-green); font-weight:bold;">0%</p></div>
+                    <hr style="border-color: var(--border-color); margin: 5px 0;">
+                    <select id="supplier-matrix" onchange="renderSupplierCost()" style="width: 100%; padding: 5px; background: #f5ebe0; font-weight: bold; color: #2c1d11; border-radius: 4px;">
+                        <option value="slum">🗑️ Black-Market Grade ($0.25/unit)</option>
+                        <option value="commercial" selected>🏭 Commodity Standard ($0.65/unit)</option>
+                        <option value="fairtrade">🌱 Organic Fair-Trade ($1.25/unit)</option>
+                    </select>
+                    <button style="margin-top:8px;" id="btn-order-shipment" onclick="procureShipment()">Order 20 Units ($<span id="shipment-cost">13.00</span>)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-operations" class="tab-content">
+            <div class="grid">
+                <div class="box">
+                    <h3>🛠️ Heavy Machinery Assets</h3>
+                    <div class="flex">
+                        <p>Espresso Machine:</p>
+                        <div>
+                            <span id="machine-val" style="font-weight:bold; margin-right:5px;">100%</span>
+                            <div class="progress-container"><div id="machine-bar" class="progress-bar"></div></div>
+                        </div>
+                    </div>
+                    <button id="btn-fix-machine" onclick="maintainMachine('espresso')">🛠️ Emergency Calibration (-$12.00)</button>
+                    <div class="flex" style="margin-top: 5px;"><p>Auto-Service Contract ($2/day):</p><input type="checkbox" id="machine-contract"></div>
+                    
+                    <hr style="border-color: var(--border-color); margin: 8px 0;">
+                    
+                    <div class="flex">
+                        <p>Commercial Air Roaster:</p>
+                        <div>
+                            <span id="roaster-val" style="font-weight:bold; margin-right:5px;">N/A</span>
+                            <div class="progress-container"><div id="roaster-bar" class="progress-bar" style="width:0%;"></div></div>
+                        </div>
+                    </div>
+                    <button id="btn-buy-roaster" onclick="purchaseRoaster()">🛒 Commission Roaster Asset (-$80.00)</button>
+                    <button id="btn-fix-roaster" onclick="maintainMachine('roaster')" disabled>🛠️ Refurbish Roaster Drums (-$15.00)</button>
+                </div>
+
+                <div class="box">
+                    <h3>👥 Labor Management</h3>
+                    <div class="flex"><p>Staff Status:</p><p id="labor-status" style="font-weight:bold;">Solo Operations</p></div>
+                    <div class="flex">
+                        <p>Barista Morale:</p>
+                        <div>
+                            <span id="morale-val" style="font-weight:bold; margin-right:5px;">100%</span>
+                            <div class="progress-container"><div id="morale-bar" class="progress-bar"></div></div>
+                        </div>
+                    </div>
+                    <div class="flex"><p>Daily Shift Wage:</p>
+                        <div>
+                            <button id="wage-down" onclick="adjustWage(-2)" style="width:25px; display:inline;">-</button>
+                            <span id="wage-display" style="font-weight:bold; padding:0 5px;">$12.00</span>
+                            <button id="wage-up" onclick="adjustWage(2)" style="width:25px; display:inline;">+</button>
+                        </div>
+                    </div>
+                    <button id="btn-hire-labor" onclick="onboardEmployee()">🤝 Onboard Master Barista (Sign-on: $40)</button>
+                    <button id="btn-settle-strike" onclick="settleLaborDispute()" style="background:var(--neon-orange); color:#000; display:none;">🔥 PAY UNION SETTLEMENT (-$35.00)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-pricing" class="tab-content">
+            <div class="box full-width">
+                <h3>📋 Menu Engineering & Active Marketing</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:12px; font-size: 0.85em;">
+                    <div>☕ <strong>Espresso</strong><br>$<input type="number" id="p-esp" value="3.50" step="0.50"></div>
+                    <div>🥛 <strong>Latte</strong><br>$<input type="number" id="p-lat" value="5.50" step="0.50"></div>
+                    <div>🧊 <strong>Iced Macch.</strong><br>$<input type="number" id="p-ice" value="6.50" step="0.50"></div>
+                    <div>🍯 <strong>Caramel Macch.</strong><br>$<input type="number" id="p-car" value="7.00" step="0.50"></div>
+                    <div>☁️ <strong>Flat White</strong><br>$<input type="number" id="p-flt" value="5.75" step="0.50"></div>
+                    <div>💧 <strong>Americano</strong><br>$<input type="number" id="p-ame" value="4.00" step="0.50"></div>
+                    <div>🍨 <strong>Affogato</strong><br>$<input type="number" id="p-aff" value="7.50" step="0.50"></div>
+                </div>
+                <div class="flex" style="border-top:1px dashed var(--border-color); padding-top:8px;">
+                    <span>📢 <strong>Marketing Distribution:</strong></span>
+                    <select id="marketing-select" style="width:230px; padding:4px; background:#f5ebe0; color:#2c1d11; font-weight:bold;">
+                        <option value="none">No External Ads ($0/day)</option>
+                        <option value="flyer">📰 Geo-Targeted Flyers (-$4/day)</option>
+                        <option value="social">📱 Viral Social Blitz (-$12/day)</option>
+                    </select>
+                </div>
+                <button style="background: linear-gradient(135deg, var(--neon-blue), #0d6e8f); border: 1px solid var(--neon-blue); padding:12px; font-size:1.1em; margin-top:10px;" onclick="startBaristaShift()">🏁 LOCK STRATEGY & OPEN COUNTER 🏁</button>
+            </div>
+        </div>
+
+        <div class="box full-width" style="margin-top:15px;">
+            <h3>📊 Executive Ledger & Daily Audit</h3>
+            <div id="audit-trail">Verify values across management tabs and open the business counter above.</div>
+        </div>
+    </div>
+
+    <div id="barista-shift-container" style="display: none;">
+        <h2 style="color: var(--neon-orange); font-size: 1.8em;">🛠️ RUSH HOUR: BACK-BAR SHIFT 🛠️</h2>
+        <p>Order Queue Remaining: <span id="queue-count" style="font-weight:bold; color:#fff;">0</span></p>
+        
+        <div class="ticket-view">
+            <div>📋 ACTIVE TICKET #<span id="ticket-id">101</span></div>
+            <hr style="border-color: #2c1d11; margin: 5px 0;">
+            <div style="font-size: 1.3em;">wants: <span id="ticket-drink" style="color: var(--neon-blue);">Latte</span></div>
+            <div style="font-size: 0.75em; margin-top: 5px; color: #555; line-height: 1.3em;">
+                <strong>Recipe Matrix Manual:</strong><br>
+                • Espresso: Espresso Shot<br>
+                • Latte: Espresso Shot + Steamed Milk<br>
+                • Iced Macchiato: Espresso Shot + Steamed Milk + Ice Cubes<br>
+                • Caramel Macchiato: Espresso Shot + Steamed Milk + Caramel Syrup<br>
+                • Flat White: Espresso Shot + Microfoam<br>
+                • Americano: Espresso Shot + Hot Water<br>
+                • Affogato: Espresso Shot + Vanilla Ice Cream
+            </div>
+        </div>
+
+        <div class="cup-builder">
+            <strong>Current Cup Contents:</strong>
+            <div id="cup-contents" style="color: var(--neon-green); font-size: 1.1em; margin: 5px 0; font-weight:bold; min-height:24px;">[ Empty Cup ]</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+            <button class="crafting-btn" onclick="addIngredient('Espresso Shot')">☕ Pull Espresso Shot</button>
+            <button class="crafting-btn" onclick="addIngredient('Steamed Milk')">🥛 Steam Milk</button>
+            <button class="crafting-btn" onclick="addIngredient('Ice Cubes')">🧊 Add Ice Cubes</button>
+            <button class="crafting-btn" onclick="addIngredient('Caramel Syrup')">🍯 Pump Caramel Syrup</button>
+            <button class="crafting-btn" onclick="addIngredient('Microfoam')">☁️ Pour Microfoam</button>
+            <button class="crafting-btn" onclick="addIngredient('Hot Water')">💧 Dispense Hot Water</button>
+            <button class="crafting-btn" onclick="addIngredient('Vanilla Ice Cream')">🍨 Scoop Ice Cream</button>
+        </div>
+        
+        <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
+            <button style="background: var(--neon-green); width: 180px;" onclick="serveDrinkTicket()">🛎️ Serve Customer</button>
+            <button style="background: var(--neon-red); width: 180px;" onclick="trashCupContents()">🗑️ Dump Cup</button>
+        </div>
+    </div>
+
+    <div id="liquidation-screen" style="display: none; text-align: center; padding: 50px 20px;">
+        <h1 style="color: var(--neon-red); font-size: 3em;">🚨 LIQUIDATION FORECLOSURE 🚨</h1>
+        <p style="font-size: 1.1em; max-width: 600px; margin: 20px auto; color:#b08968;">
+            Your legal liabilities overshot your credit parameters. Asset forfeiture active.
+        </p>
+        <h2>Venture Lifespan: Day <span id="f-days" style="color: #fff;">0</span></h2>
+        <button style="width: auto; padding: 12px 35px;" onclick="location.reload()">Re-capitalize Venture</button>
+    </div>
+
+    <script>
+        // Initialize Supabase Client Connection safely
+        let supabase = null;
+        const SUPABASE_URL = 'https://cehkuqzoasrgbcqgsduj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlaGt1cXpvYXNyZ2JjcWdzZHVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTIzMDMsImV4cCI6MjA5NDc4ODMwM30.74yfBT1-BhH3hsM7JdzCB_8ue6oE25zKd8adjhsYsE';
+        
+        try {
+            if (typeof supabase !== 'undefined' && supabase.createClient) {
+                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch(e) {
+            console.log("Supabase initialization deferred or running offline mode:", e);
+        }
+
+        // State Tracking Core Variables
+        let playerId = localStorage.getItem('empire_player_id');
+        if (!playerId) {
+            playerId = 'player_' + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('empire_player_id', playerId);
+        }
+
+        let cash = 100.00; let bankLoan = 0.00; let creditLimit = 200.00;
+        let beans = 50.0; let beanAgeIndex = 0; let brandLoyalty = 50;
+        let day = 1; let currentWeather = 'Sunny'; let contaminationRisk = 0;
+        let machineCondition = 100; let roasterCondition = 0; let hasRoaster = false;
+        let hasEmployee = false; let employeeMorale = 100; let shiftWage = 12.00; let isStriking = false;
+
+        let dailyQueue = []; let activeCup = []; let currentTicketIndex = 0;
+        let dayGrossReceipts = 0; let dayBeansUsed = 0; let accountingTotalOverhead = 0;
+        let targetDemographic = "General Public";
+
+        const demographics = [
+            { name: "General Public", text: "👥 Market Normalized split profiles.", mod: 1.0 },
+            { name: "Wall Street Execs", text: "💼 Market Surge: Higher pricing tolerance observed.", mod: 1.35 },
+            { name: "Tech Hipsters", text: "🤓 Trend Inversion: Specialty drinks trending high.", mod: 1.0 },
+            { name: "University Cram Week", text: "📚 Volume Wave: Low price tolerance.", mod: 0.8 }
+        ];
+
+        const suppliers = { slum: 0.25, commercial: 0.65, fairtrade: 1.25 };
+        const weathers = ['Sunny', 'Rainy', 'Heatwave'];
+
+        // Recipe Matrix Mapping Definitions
+        const drinkRecipes = {
+            "Espresso": ["Espresso Shot"],
+            "Latte": ["Espresso Shot", "Steamed Milk"],
+            "Iced Macchiato": ["Espresso Shot", "Steamed Milk", "Ice Cubes"],
+            "Caramel Macchiato": ["Espresso Shot", "Steamed Milk", "Caramel Syrup"],
+            "Flat White": ["Espresso Shot", "Microfoam"],
+            "Americano": ["Espresso Shot", "Hot Water"],
+            "Affogato": ["Espresso Shot", "Vanilla Ice Cream"]
+        };
+
+        const drinkPriceElementIds = {
+            "Espresso": "p-esp", "Latte": "p-lat", "Iced Macchiato": "p-ice",
+            "Caramel Macchiato": "p-car", "Flat White": "p-flt", "Americano": "p-ame", "Affogato": "p-aff"
+        };
+
+        // ==========================================
+        //         🛡️ SUPABASE AUTH INFRASTRUCTURE
+        // ==========================================
+        async function handleEmailSignUp() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const statusEl = document.getElementById('auth-status');
+            
+            if(!email || !password) { alert('Provide both registration parameters.'); return; }
+            if(!supabase) { alert('Supabase client is offline. Local play profile active.'); return; }
+            
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if(error) {
+                statusEl.innerText = `🚨 registration failed: ${error.message}`;
+                statusEl.style.color = "var(--neon-red)";
+            } else {
+                statusEl.innerText = "✅ Profile created! Check verification link if enabled.";
+                statusEl.style.color = "var(--neon-green)";
+            }
+        }
+
+        async function handleEmailLogin() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const statusEl = document.getElementById('auth-status');
+            
+            if(!email || !password) { alert('Provide structural authentication profiles.'); return; }
+            if(!supabase) { alert('Supabase client is offline. Local play profile active.'); return; }
+            
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if(error) {
+                statusEl.innerText = `🚨 Profile rejection: ${error.message}`;
+                statusEl.style.color = "var(--neon-red)";
+            } else {
+                playerId = data.user.id;
+                localStorage.setItem('empire_player_id', playerId);
+                document.getElementById('active-user-badge').innerText = email;
+                statusEl.innerText = "✅ Session Locked. Syncing cloud matrix storage...";
+                statusEl.style.color = "var(--neon-green)";
+                await loadGameFromCloud();
+            }
+        }
+
+        if (supabase) {
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (session && session.user) {
+                    playerId = session.user.id;
+                    localStorage.setItem('empire_player_id', playerId);
+                    document.getElementById('active-user-badge').innerText = session.user.email;
+                    document.getElementById('auth-status').innerText = "🔒 Connected Secure Instance";
+                    document.getElementById('auth-status').style.color = "var(--neon-green)";
+                }
+            });
+        }
+
+        // ==========================================
+        //         💾 CLOUD BACKUP HUB ENGINE
+        // ==========================================
+        async function saveGameToCloud() {
+            const statusEl = document.getElementById('save-status');
+            if(!supabase) { 
+                statusEl.innerText = "⚠️ Offline Mode: Cannot write to server cloud."; 
+                statusEl.style.color = "var(--neon-orange)";
+                return; 
+            }
+            
+            const saveState = {
+                playerId, cash, bankLoan, creditLimit, beans, beanAgeIndex, brandLoyalty,
+                day, currentWeather, contaminationRisk, machineCondition, roasterCondition,
+                hasRoaster, hasEmployee, employeeMorale, shiftWage, isStriking
+            };
+
+            const { error } = await supabase
+                .from('espresso_saves')
+                .upsert({ id: playerId, state_json: saveState, updated_at: new Date() });
+
+            if(error) {
+                statusEl.innerText = `🚨 Cloud Write Failed: ${error.message}`;
+                statusEl.style.color = "var(--neon-red)";
+            } else {
+                statusEl.innerText = "✅ State parameters successfully piped into Supabase server.";
+                statusEl.style.color = "var(--neon-green)";
+            }
+        }
+
+        async function loadGameFromCloud() {
+            const statusEl = document.getElementById('save-status');
+            if(!supabase) { 
+                statusEl.innerText = "⚠️ Offline Mode: Cloud sync unavailable."; 
+                return; 
+            }
+            
+            const { data, error } = await supabase
+                .from('espresso_saves')
+                .select('state_json')
+                .eq('id', playerId)
+                .single();
+
+            if (error || !data) {
+                statusEl.innerText = "⚠️ No remote save profile found. Running local instance.";
+            } else {
+                const s = data.state_json;
+                cash = s.cash; bankLoan = s.bankLoan; creditLimit = s.creditLimit;
+                beans = s.beans; beanAgeIndex = s.beanAgeIndex || 0; brandLoyalty = s.brandLoyalty;
+                day = s.day; currentWeather = s.currentWeather; contaminationRisk = s.contaminationRisk;
+                machineCondition = s.machineCondition; roasterCondition = s.roasterCondition;
+                hasRoaster = s.hasRoaster; hasEmployee = s.hasEmployee; employeeMorale = s.employeeMorale;
+                shiftWage = s.shiftWage; isStriking = s.isStriking;
+                
+                statusEl.innerText = "✅ Cloud Matrix synchronized dynamically.";
+                statusEl.style.color = "var(--neon-green)";
+                updateUI();
+            }
+        }
+
+        // ==========================================
+        //         🛠️ CORE UI & DASHBOARD INTERFACE
+        // ==========================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            // Fixed reference to event.currentTarget
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active');
+            } else if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        function renderSupplierCost() {
+            let type = document.getElementById('supplier-matrix').value;
+            document.getElementById('shipment-cost').innerText = (suppliers[type] * 20).toFixed(2);
+        }
+
+        function adjustWage(val) {
+            shiftWage = Math.max(4, shiftWage + val);
+            document.getElementById('wage-display').innerText = `$${shiftWage.toFixed(2)}`;
+            updateUI();
+        }
+
+        function updateUI() {
+            if (cash < 0) {
+                let chunk = Math.ceil(Math.abs(cash) / 25) * 25;
+                bankLoan += chunk; cash += chunk;
+            }
+            if (bankLoan >= creditLimit) {
+                document.getElementById('active-game').style.display = 'none';
+                document.getElementById('barista-shift-container').style.display = 'none';
+                document.getElementById('liquidation-screen').style.display = 'block';
+                document.getElementById('f-days').innerText = day; return;
+            }
+
+            document.getElementById('cash').innerText = `$${cash.toFixed(2)}`;
+            document.getElementById('loan-display').innerText = `$${bankLoan.toFixed(2)}`;
+            document.getElementById('credit-limit').innerText = (creditLimit - bankLoan).toFixed(2);
+            document.getElementById('btn-pay-loan').disabled = bankLoan <= 0 || cash < 25;
+            document.getElementById('loyalty-val').innerText = `${brandLoyalty}%`;
+            document.getElementById('loyalty-bar').style.width = `${brandLoyalty}%`;
+
+            const contEl = document.getElementById('contamination-display');
+            contEl.innerText = `${contaminationRisk}%`;
+            contEl.style.color = contaminationRisk > 40 ? "var(--neon-red)" : "var(--neon-orange)";
+
+            document.getElementById('machine-val').innerText = `${machineCondition}%`;
+            document.getElementById('machine-bar').style.width = `${machineCondition}%`;
+
+            document.getElementById('roaster-val').innerText = hasRoaster ? `${roasterCondition}%` : 'N/A';
+            document.getElementById('roaster-bar').style.width = hasRoaster ? `${roasterCondition}%` : '0%';
+            document.getElementById('btn-buy-roaster').disabled = hasRoaster || cash < 80;
+            document.getElementById('btn-fix-roaster').disabled = !hasRoaster || roasterCondition >= 100 || cash < 15;
+
+            document.getElementById('beans-display').innerText = Math.floor(beans);
+            document.getElementById('day-counter').innerText = day;
+
+            let taxCycle = day % 5; let daysLeft = 5 - taxCycle; if(taxCycle === 0) daysLeft = 0;
+            document.getElementById('tax-countdown').innerText = daysLeft === 0 ? "⚠️ IRS AUDIT TONIGHT" : `TAX IN: ${daysLeft} DAYS`;
+
+            const moraleEl = document.getElementById('morale-val');
+            moraleEl.innerText = hasEmployee ? `${employeeMorale}%` : '100%';
+            document.getElementById('morale-bar').style.width = hasEmployee ? `${employeeMorale}%` : '100%';
+
+            if (isStriking) {
+                document.getElementById('labor-status').innerText = "❌ ON STRIKE (Union Block)";
+                document.getElementById('labor-status').style.color = "var(--neon-red)";
+                document.getElementById('btn-settle-strike').style.display = "block";
+            } else if (hasEmployee) {
+                document.getElementById('labor-status').innerText = "💼 Contract Active";
+                document.getElementById('labor-status').style.color = "var(--neon-green)";
+                document.getElementById('btn-settle-strike').style.display = "none";
+            } else {
+                document.getElementById('labor-status').innerText = "Solo Operations";
+                document.getElementById('btn-settle-strike').style.display = "none";
+            }
+            renderSupplierCost();
+        }
+
+        function procureShipment() {
+            let supplierType = document.getElementById('supplier-matrix').value;
+            let netCost = suppliers[supplierType] * 20;
+            if (cash >= netCost && (beans + 20 <= 120)) {
+                cash -= netCost; beans += 20; beanAgeIndex = 0;
+                if (supplierType === 'slum') contaminationRisk += 15;
+                updateUI();
+            } else if (beans + 20 > 120) {
+                alert("Storage maxed out! Expand infrastructure or burn stock.");
+            } else {
+                alert("Insufficient fluid capital to place supplier purchase.");
+            }
+        }
+
+        function payDownLoan() { if (cash >= 25 && bankLoan > 0) { cash -= 25; bankLoan -= 25; updateUI(); } }
+        
+        function maintainMachine(target) {
+            if (target === 'espresso' && cash >= 12) { cash -= 12; machineCondition = Math.min(100, machineCondition + 35); updateUI(); }
+            if (target === 'roaster' && cash >= 15 && hasRoaster) { cash -= 15; roasterCondition = Math.min(100, roasterCondition + 40); updateUI(); }
+        }
+
+        function purchaseRoaster() {
+            if (cash >= 80 && !hasRoaster) { cash -= 80; hasRoaster = true; roasterCondition = 100; updateUI(); }
+        }
+
+        function onboardEmployee() { if (cash >= 40 && !hasEmployee) { cash -= 40; hasEmployee = true; updateUI(); } }
+        function settleLaborDispute() { if (cash >= 35 && isStriking) { cash -= 35; employeeMorale = 100; isStriking = false; updateUI(); } }
+
+        // ==========================================
+        //         🛠️ RUSH HOUR BUSINESS LOOP
+        // ==========================================
+        function startBaristaShift() {
+            if (isStriking) {
+                alert("Union Strike in progress. Settle labor disputes before running business channels.");
+                return;
+            }
+            if (beans < 5) {
+                alert("Your stockpile is dry! Order beans from your material suppliers.");
+                return;
+            }
+
+            let baseRent = 22.00;
+            let payroll = hasEmployee ? shiftWage : 0.00;
+            let marketingCost = document.getElementById('marketing-select').value === 'flyer' ? 4.00 : (document.getElementById('marketing-select').value === 'social' ? 12.00 : 0.00);
+            let contractCost = document.getElementById('machine-contract').checked ? 2.00 : 0.00;
+            
+            accountingTotalOverhead = baseRent + payroll + marketingCost + contractCost;
+            cash -= accountingTotalOverhead;
+
+            machineCondition = Math.max(0, machineCondition - (document.getElementById('machine-contract').checked ? 2 : 6));
+            if(hasRoaster) roasterCondition = Math.max(0, roasterCondition - 4);
+
+            if (hasEmployee) {
+                employeeMorale = shiftWage < 10 ? Math.max(0, employeeMorale - 25) : Math.min(100, employeeMorale + 5);
+                if (employeeMorale <= 15) isStriking = true;
+            }
+
+            // Pick dynamic demographic targeting context
+            const demoObj = demographics[Math.floor(Math.random() * demographics.length)];
+            targetDemographic = demoObj.name;
+            document.getElementById('data-ticker').innerText = `📊 SHIFT ENGAGEMENT MATRIX: ${demoObj.text}`;
+
+            let finalCount = Math.floor((Math.random() * 8 + 5) * (brandLoyalty / 50) * (machineCondition / 100) * demoObj.mod);
+            if(marketingCost === 4.00) finalCount += 3;
+            if(marketingCost === 12.00) finalCount += 8;
+
+            if (machineCondition <= 0) {
+                alert("💥 Espresso Engine Malfunction! Back-bar safety breakers blown.");
+                endFiscalDayCycle(0, 0, "Mechanical breakdown shuttered shop doors."); return;
+            }
+
+            dailyQueue = [];
+            const drinkPool = ["Espresso", "Latte", "Iced Macchiato", "Caramel Macchiato", "Flat White", "Americano", "Affogato"];
+            for(let i=0; i<finalCount; i++) {
+                dailyQueue.push(drinkPool[Math.floor(Math.random() * drinkPool.length)]);
+            }
+
+            if(dailyQueue.length === 0) { endFiscalDayCycle(0, 0, "No buyers spawned."); return; }
+
+            dayGrossReceipts = 0; dayBeansUsed = 0; currentTicketIndex = 0;
+            document.getElementById('active-game').style.display = 'none';
+            document.getElementById('barista-shift-container').style.display = 'block';
+            nextTicket();
+        }
+
+        function nextTicket() {
+            if(currentTicketIndex >= dailyQueue.length) {
+                endFiscalDayCycle(dayGrossReceipts, dayBeansUsed, "Shift successfully executed to queue termination.");
+                return;
+            }
+            
+            // Check if stock runs bone dry mid-shift
+            if(beans < 1) {
+                alert("🚨 Material supply exhausted mid-rush hour!");
+                endFiscalDayCycle(dayGrossReceipts, dayBeansUsed, "Premature shutdown: out of coffee stock.");
+                return;
+            }
+
+            document.getElementById('queue-count').innerText = dailyQueue.length - currentTicketIndex;
+            document.getElementById('ticket-id').innerText = 101 + currentTicketIndex;
+            document.getElementById('ticket-drink').innerText = dailyQueue[currentTicketIndex];
+            trashCupContents();
+        }
+
+        function addIngredient(ingName) {
+            activeCup.push(ingName);
+            document.getElementById('cup-contents').innerText = `[ ${activeCup.join(' + ')} ]`;
+        }
+
+        function trashCupContents() {
+            activeCup = [];
+            document.getElementById('cup-contents').innerText = '[ Empty Cup ]';
+        }
+
+        function serveDrinkTicket() {
+            let targetDrink = dailyQueue[currentTicketIndex];
+            let requiredRecipe = drinkRecipes[targetDrink];
+            
+            // Check structural array elements match recipe manual requirements
+            let isCorrect = activeCup.length === requiredRecipe.length && 
+                            requiredRecipe.every(val => activeCup.includes(val));
+
+            if(isCorrect) {
+                let elementId = drinkPriceElementIds[targetDrink];
+                let pricePriced = parseFloat(document.getElementById(elementId).value) || 0;
+                
+                dayGrossReceipts += pricePriced;
+                dayBeansUsed += 1;
+                beans -= 1;
+                brandLoyalty = Math.min(100, brandLoyalty + 2);
+            } else {
+                brandLoyalty = Math.max(10, brandLoyalty - 4);
+                alert(`😡 Customer rejected your build. Desired a clean ${targetDrink}!`);
+            }
+
+            currentTicketIndex++;
+            nextTicket();
+        }
+
+        // ==========================================
+        //         📊 LEDGER AUDIT & POST-DAY EVAL
+        // ==========================================
+        function endFiscalDayCycle(receipts, beansConsumed, causeString) {
+            // Re-route views
+            document.getElementById('barista-shift-container').style.display = 'none';
+            document.getElementById('active-game').style.display = 'block';
+
+            let taxInvoice = 0;
+            if(day % 5 === 0) {
+                taxInvoice = Math.max(0, cash * 0.15);
+                cash -= taxInvoice;
+            }
+
+            cash += receipts;
+
+            let cleanNet = receipts - accountingTotalOverhead - taxInvoice;
+
+            // Render output ledger matrix 
+            let auditHtml = `
+                <div class="ledger-row" style="color:var(--accent-gold);">📜 Shift Narrative: ${causeString}</div>
+                <div class="ledger-row">🎯 Targeted Segment: <strong>${targetDemographic}</strong></div>
+                <div class="ledger-row">💵 Gross Shift Income: <span style="color:var(--neon-green)">+$${receipts.toFixed(2)}</span></div>
+                <div class="ledger-row">💸 Deducted Operational Overhead: <span style="color:var(--neon-red)">-$${accountingTotalOverhead.toFixed(2)}</span></div>
+                \${taxInvoice > 0 ? \`<div class="ledger-row" style="color:var(--neon-red)">⚠️ Internal Revenue Tax Assessed: -\$\${taxInvoice.toFixed(2)}</div>\` : ''}
+                <div class="ledger-row">☕ Material Intake Consumed: -\${beansConsumed} inventory blocks</div>
+                <div class="ledger-row" style="border-top:1px dashed #fff; font-weight:bold;">📉 Net Capital Delta: \$\${cleanNet.toFixed(2)}</div>
+            `;
+            document.getElementById('audit-trail').innerHTML = auditHtml;
+
+            // Shift ambient environment properties
+            day++;
+            currentWeather = weathers[Math.floor(Math.random() * weathers.length)];
+            const weatherDisplay = document.getElementById('weather-display');
+            weatherDisplay.innerText = `☀️ \${currentWeather}`;
+            weatherDisplay.className = `badge \${currentWeather.toLowerCase()}`;
+
+            // Handle organic contamination dissipation/aging shifts
+            if(contaminationRisk > 0) contaminationRisk = Math.max(0, contaminationRisk - 5);
+            
+            updateUI();
+        }
+
+        // Run UI update hook on initialization
+        updateUI();
+    </script>
+</body>
+</html>
